@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Иконки Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<title>Создать уведомление</title>
+<style>
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #ece9e6, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+  min-height: 100vh;
+  padding: 40px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 28px;
+  color: #0088cc;
+  margin-bottom: 30px;
+  position: relative;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+form {
+  background: #fff;
+  padding: 30px 40px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  width: 100%;
+  max-width: 500px;
+  animation: fadeIn 1s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+label i {
+  color: #0088cc;
+  font-size: 16px;
+  transition: transform 0.3s;
+}
+
+label:hover i {
+  transform: rotate(15deg);
+}
+
+input[type="text"],
+input[type="datetime-local"],
+textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  background: #f9f9f9;
+}
+
+input[type="text"]:focus,
+input[type="datetime-local"]:focus,
+textarea:focus {
+  border-color: #0088cc;
+  box-shadow: 0 0 8px rgba(0, 136, 204, 0.2);
+  outline: none;
+  transform: scale(1.02);
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #00c6ff, #0072ff);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+  background: linear-gradient(135deg, #0072ff, #00c6ff);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+
+button i {
+  font-size: 18px;
+  animation: shake 1s infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Анимация для плавного появления формы */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<h2>📝 Новое уведомление</h2>
+<form id="notificationForm">
+  <input type="hidden" id="user_id" value="{{ user_id }}" />
+
+  <div class="form-group">
+    <label for="event_name"><i class="fas fa-tag"></i> Название события</label>
+    <input type="text" id="event_name" placeholder="Введите название" required />
+  </div>
+
+  <div class="form-group">
+    <label for="event_description"><i class="fas fa-info-circle"></i> Описание</label>
+    <textarea id="event_description" placeholder="Опишите событие" required></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="event_time"><i class="fas fa-clock"></i> Дата и время</label>
+    <input type="datetime-local" id="event_time" required />
+  </div>
+
+  <button type="submit"><i class="fas fa-bell"></i> Создать уведомление</button>
+</form>
+
+<script>
+document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const eventTime = new Date(document.getElementById('event_time').value);
+  const now = new Date();
+
+  if (eventTime <= now) {
+    alert('❌ Ошибка: Нельзя отправить уведомление в прошлое.');
+    return; // Прекратить дальнейшее выполнение, если время прошлое
+  }
+
+
+  const eventData = {
+    user_id: parseInt(document.getElementById('user_id').value),
+    text: `Событие: ${document.getElementById('event_name').value}\nОписание: ${document.getElementById('event_description').value}`,
+    time: document.getElementById('event_time').value
+  };
+
+  try {
+    const response = await fetch('{{ web_server_url }}/api/create_notification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(eventData)
+    });
+    const result = await response.json();
+    if (result.status === 'success') {
+      alert('✅ Уведомление успешно создано!');
+    } else {
+      alert('❌ Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+    }
+  } catch (error) {
+    alert('🚫 Ошибка сети: ' + error.message);
+  }
+});
+</script>
+</body>
+</html>
